@@ -1,0 +1,8 @@
+configobj
+gossip
+pymongo
+gitpython
+apscheduler
+# Fork for now until pull request gets merged in: https://github.com/smarzola/anypubsub/pull/2
+#anypubsub
+git+https://github.com/edouardpoitras/anypubsub.git
