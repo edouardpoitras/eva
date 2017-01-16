@@ -169,7 +169,7 @@ class EvaContext(object):
         :return: True if the keyword is found, False otherwise.
         :rtype: boolean
         """
-        return keyword in self.input_text
+        return self.input_text is not None and keyword in self.input_text
 
     def set_input_text(self, text):
         """
