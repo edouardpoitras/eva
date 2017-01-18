@@ -36,6 +36,9 @@ from anypubsub import create_pubsub_from_settings
 # Arguments passed via command line.
 ARGS = None
 
+# The sound played when Eva recognizes the keyword for recording.
+SOUND_FILE = os.path.abspath(os.path.dirname(__file__)) + '/sound.wav'
+
 # Pocketsphinx/respeaker configuration.
 os.environ['POCKETSPHINX_DIC'] = os.path.abspath(os.path.dirname(__file__)) + '/dictionary.txt'
 os.environ['POCKETSPHINX_KWS'] = os.path.abspath(os.path.dirname(__file__)) + '/keywords.txt'
@@ -55,7 +58,7 @@ def listen(quit_event):
     mic = Microphone(quit_event=quit_event)
     while not quit_event.is_set():
         if mic.wakeup(ARGS.keyword):
-            play('sound.wav')
+            play(SOUND_FILE)
             # Give the sound some time to play.
             time.sleep(0.5)
             print('Listening...')
