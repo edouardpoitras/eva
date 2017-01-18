@@ -55,6 +55,9 @@ def listen(quit_event):
     mic = Microphone(quit_event=quit_event)
     while not quit_event.is_set():
         if mic.wakeup(ARGS.keyword):
+            play('sound.wav')
+            # Give the sound some time to play.
+            time.sleep(0.5)
             print('Listening...')
             data = mic.listen(duration=5, timeout=1)
             udp_stream(data)
