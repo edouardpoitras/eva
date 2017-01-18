@@ -1,9 +1,5 @@
 """
 Use this python client to send audio data and receive responses from Eva.
-Still needs a lot of work.
-
-:todo: Clean it up, document better, and potentially replace a lot of this code
-    with python's speech_recognition module.
 
 Requirements:
     - Requires a working pyaudio installation
@@ -11,6 +7,9 @@ Requirements:
         apt-get install python-pyaudio
          or
         pip3 install pyaudio --user
+    - Requires pocketsphinx, webrtcvad, respeaker
+        apt-get install pocketsphinx
+        pip3 install pocketsphinx webrtcvad respeaker
     - Requires pygame for audio playback
         apt-get install python3-pygame
          or
@@ -23,117 +22,100 @@ Requirements:
         pip3 install pymongo --user
     - Requires that Eva have the audio_server plugin enabled
 """
-import socket
-import struct
-import math
+import os
 import time
-import pyaudio
-from anypubsub import create_pubsub_from_settings
+import socket
+import argparse
+from threading import Thread, Event
+from multiprocessing import Process
 from pygame import mixer
 from pymongo import MongoClient
-from threading import Thread
-from multiprocessing import Process
+from respeaker.microphone import Microphone
+from anypubsub import create_pubsub_from_settings
 
-# Eva server hostname or IP.
-HOST = 'localhost'
-# Port for audio streaming - Eva expects 8800.
-PORT = 8800
-# Number of seconds to record a sample in order to get a threshold.
-THRESHOLD_TEST_TIME = 3
-# Percent loudness over normal ambient sound to count as speech.
-THRESHOLD_MULTIPLIER = 2
-# Number of seconds to wait on no audio to stop streaming to server.
-MAX_IDLE_SECONDS = 1
-SHORT_NORMALIZE = (1.0/32768.0)
-# Audio rate for recording.
-RATE = 16000
-# Frames per buffer.
-CHUNK = 1024
+# Arguments passed via command line.
+ARGS = None
 
-# Used to keep track of recorded frames to send across the network.
-FRAMES = []
+# Pocketsphinx/respeaker configuration.
+os.environ['POCKETSPHINX_DIC'] = os.path.abspath(os.path.dirname(__file__)) + '/dictionary.txt'
+os.environ['POCKETSPHINX_KWS'] = os.path.abspath(os.path.dirname(__file__)) + '/keywords.txt'
 
-def get_rms(block):
-    count = len(block) / 2
-    fmt = "%dh" %count
-    shorts = struct.unpack(fmt, block)
-    sum_squares = 0.0
-    for sample in shorts:
-        n = sample * SHORT_NORMALIZE
-        sum_squares += n * n
-    return math.sqrt(sum_squares / count)
+def listen(quit_event):
+    """
+    Utilizes respeaker's Microphone object to liseen for keyword and sends audio
+    data to Eva over the network once the keyword is heard.
 
-def get_threshold():
-    # Prepare recording stream
-    audio = pyaudio.PyAudio()
-    stream = audio.open(format=pyaudio.paInt16,
-                        channels=1,
-                        rate=RATE,
-                        input=True,
-                        frames_per_buffer=CHUNK)
-    # Calculate the long run average, and thereby the proper threshold
-    rms_values = []
-    for _ in range(0, int(RATE / CHUNK * THRESHOLD_TEST_TIME)):
-        block = stream.read(CHUNK)
-        rms = get_rms(block)
-        rms_values.append(rms)
-    return sum(rms_values) / len(rms_values) * THRESHOLD_MULTIPLIER
+    Audio data will be sent for a maximum of 5 seconds and will stop sending
+    after 1 second of silence.
 
-def udp_stream():
+    :param quit_event: A threading event object used to abort listening.
+    :type quit_event: :class:`threading.Event`
+    """
+    global ARGS
+    mic = Microphone(quit_event=quit_event)
+    while not quit_event.is_set():
+        if mic.wakeup(ARGS.keyword):
+            print('Listening...')
+            data = mic.listen(duration=5, timeout=1)
+            udp_stream(data)
+            print('Done')
+
+def udp_stream(data):
+    """
+    Simple helper function to send a generator type object containing audio
+    data, over to Eva. Uses UDP as protocol.
+
+    :param data: Generator type object returned from
+        respeaker.microphone.Microphone.listen().
+    :type data: Generator
+    """
+    global ARGS
     udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    while True:
-        if len(FRAMES) > 0:
-            udp.sendto(FRAMES.pop(0), (HOST, PORT))
-        time.sleep(0.01)
-
+    for d in data:
+        udp.sendto(d, (ARGS.eva_host, ARGS.audio_port))
     udp.close()
 
-def record():
-    p = pyaudio.PyAudio()
-    stream = p.open(format=pyaudio.paInt16,
-                    channels=1,
-                    rate=RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK)
-    print('Getting audio threshold level based on ambient noise...')
-    threshold = get_threshold()
-    print('Noise threshold set to %s' %threshold)
-    idle_time = time.time()
-    sending = False
-    while True:
-        try:
-            block = stream.read(CHUNK)
-        except IOError:
-            pass
-        amplitude = get_rms(block)
-        if amplitude > threshold:
-            print('Streaming audio...')
-            sending = True
-            FRAMES.append(block)
-            idle_time = time.time()
-        else:
-            if sending:
-                if time.time() - idle_time > MAX_IDLE_SECONDS:
-                    print('Streaming stopped after inactivity')
-                    sending = False
-
 def play(path):
+    """
+    Simple helper function to play an audio file at the specified path.
+    Utilizes pygame.mixer to play audio files of various types.
+
+    :param path: The path of the audio file on disk.
+    :type path: string
+    """
     mixer.init()
     mixer.music.load(path)
     mixer.music.play()
 
 def start_consumer(queue):
+    """
+    Starts a consumer to listen for pubsub-style messages on the specified
+    queue. Will connect to a MongoDB server specified in the parameters.
+
+    Uses multiprocessing.Process for simplicity.
+
+    :param queue: The message queue to listen for messages on.
+    :type queue: string
+    """
     process = Process(target=consume_messages, args=(queue,))
     process.start()
 
-def get_pubsub(host='localhost', port=27017, username='', password=''):
+def get_pubsub():
+    """
+    Helper function to get a anypubsub.MongoPubSub object based on parameters
+    specified by command line. Will tail the 'eva' database's 'communications'
+    collection for pubsub messages.
+
+    :return: The anypubsub object used for receiving Eva messages.
+    :rtype: anypubsub.backends.MongoPubSub
+    """
+    global ARGS
     uri = 'mongodb://'
-    if len(username) > 0:
-        uri = uri + username
-        if len(password) > 0: uri = uri + ':' + password + '@'
+    if len(ARGS.mongo_username) > 0:
+        uri = uri + ARGS.mongo_username
+        if len(ARGS.mongo_password) > 0: uri = uri + ':' + ARGS.mongo_password + '@'
         else: uri = uri + '@'
-    uri = '%s%s:%s' %(uri, host, port)
+    uri = '%s%s:%s' %(uri, ARGS.mongo_host, ARGS.mongo_port)
     client = MongoClient(uri)
     return create_pubsub_from_settings({'backend': 'mongodb',
                                         'client': client,
@@ -141,6 +123,14 @@ def get_pubsub(host='localhost', port=27017, username='', password=''):
                                         'collection': 'communications'})
 
 def consume_messages(queue):
+    """
+    The worker function that is spawned in the :func:`start_consumer` function.
+    Will do the work in listening for pubsub messages from Eva and playing
+    the audio responses.
+
+    :param queue: The pubsub message queue to subscribe to.
+    :type queue: string
+    """
     # Need to listen for messages and play audio ones to the user.
     pubsub = get_pubsub()
     subscriber = pubsub.subscribe(queue)
@@ -157,14 +147,39 @@ def consume_messages(queue):
                 play('/tmp/eva_audio')
         time.sleep(0.1)
 
-if __name__ == '__main__':
+def main():
+    """
+    Parses client configuration options, starts the consumers, and starts
+    listening for keyword.
+
+    The keyword specified needs to be configured in respeaker (the keyword must
+    be available in the pocketsphinx configuration for dictionary.txt and
+    keywords.txt).
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--keyword", help="Keyword to listen for - only works if configured in dictionary.txt and keywords.txt", default='eva')
+    parser.add_argument("--eva-host", help="Eva server hostname or IP", default='localhost')
+    parser.add_argument("--audio-port", help="Port that Eva is listening for Audio", default=8800)
+    parser.add_argument("--mongo-host", help="MongoDB hostname or IP (typically same as Eva)", default='localhost')
+    parser.add_argument("--mongo-port", help="MongoDB port", default=27017)
+    parser.add_argument("--mongo-username", help="MongoDB username", default='')
+    parser.add_argument("--mongo-password", help="MongoDB password", default='')
+    global ARGS
+    ARGS = parser.parse_args()
+    # Start the message consumers.
     start_consumer('eva_messages')
     start_consumer('eva_responses')
-    recording_thread = Thread(target=record)
-    streaming_thread = Thread(target=udp_stream)
-    recording_thread.setDaemon(True)
-    streaming_thread.setDaemon(True)
-    recording_thread.start()
-    streaming_thread.start()
-    recording_thread.join()
-    streaming_thread.join()
+    # Ready listening thread.
+    quit_event = Event()
+    thread = Thread(target=listen, args=(quit_event,))
+    thread.start()
+    while True:
+        try:
+            time.sleep(1)
+        except KeyboardInterrupt:
+            quit_event.set()
+            break
+    thread.join()
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,7 @@
+respeaker /1e-30/
+eva /1e-10/
+siri /1e-10/
+alexa /1e-30/
+jarvis /1e-30/
+cortana /1e-30/
+ok google /1e-30/
