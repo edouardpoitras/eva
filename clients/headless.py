@@ -9,7 +9,10 @@ Requirements:
         pip3 install pyaudio --user
     - Requires pocketsphinx, webrtcvad, respeaker
         apt-get install pocketsphinx
-        pip3 install pocketsphinx webrtcvad respeaker
+        pip3 install pocketsphinx webrtcvad
+        pip3 install git+https://github.com/respeaker/respeaker_python_library.git
+    - May also need PyUSB
+        pip3 install pyusb
     - Requires pygame for audio playback
         apt-get install python3-pygame
          or
@@ -21,8 +24,18 @@ Requirements:
          or
         pip3 install pymongo --user
     - Requires that Eva have the audio_server plugin enabled
+
+Optional:
+    You may optionally use Snowboy for keyword detection:
+        - Compile it for you platform (or use the provided one for Python3 Ubuntu 16.04)
+        - Follow steps at https://github.com/kitt-ai/snowboy
+        - Ensure you use swig >= 3.0.10 and Python3 in the Makefile
+        - Put the resulting _snowboydetect.so and snowboydetect.py in the snowboy/ folder
+        - Get a snowboy model from https://snowboy.kitt.ai (or use the provided alexa one)
+        - Use the --snowboy-model flag when starting the client (pointing to the snowboy model)
 """
 import os
+import sys
 import time
 import socket
 import argparse
@@ -32,6 +45,12 @@ from pygame import mixer
 from pymongo import MongoClient
 from respeaker.microphone import Microphone
 from anypubsub import create_pubsub_from_settings
+
+# Check for Snowboy.
+try:
+    import snowboy.snowboydecoder
+except:
+    print('WARNING: Could not import Snowboy decoder/model, using Pocketsphinx')
 
 # Arguments passed via command line.
 ARGS = None
@@ -55,16 +74,27 @@ def listen(quit_event):
     :type quit_event: :class:`threading.Event`
     """
     global ARGS
+    global mic
     mic = Microphone(quit_event=quit_event)
     while not quit_event.is_set():
-        if mic.wakeup(ARGS.keyword):
-            play(SOUND_FILE)
-            # Give the sound some time to play.
-            time.sleep(0.5)
-            print('Listening...')
-            data = mic.listen(duration=5, timeout=1)
-            udp_stream(data)
-            print('Done')
+        if ARGS.snowboy_model:
+            detector = snowboy.snowboydecoder.HotwordDetector(ARGS.snowboy_model, sensitivity=0.5)
+            detector.start(detected_callback=handle_command,
+                           interrupt_check=quit_event.is_set,
+                           sleep_time=0.03)
+            detector.terminate()
+        elif mic.wakeup(ARGS.keyword):
+            handle_command()
+
+def handle_command():
+    global mic
+    play(SOUND_FILE)
+    # Give the sound some time to play.
+    time.sleep(0.5)
+    print('Listening...')
+    data = mic.listen(duration=5, timeout=1)
+    udp_stream(data)
+    print('Done')
 
 def udp_stream(data):
     """
@@ -164,6 +194,7 @@ def main():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--keyword", help="Keyword to listen for - only works if configured in dictionary.txt and keywords.txt", default='eva')
+    parser.add_argument("--snowboy-model", help="Alternatively specify a Snowboy model instead of using Pocketsphinx for keyword detection")
     parser.add_argument("--eva-host", help="Eva server hostname or IP", default='localhost')
     parser.add_argument("--audio-port", help="Port that Eva is listening for Audio", default=8800)
     parser.add_argument("--mongo-host", help="MongoDB hostname or IP (typically same as Eva)", default='localhost')

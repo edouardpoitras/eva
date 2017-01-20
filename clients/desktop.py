@@ -9,10 +9,10 @@ import pystray
 from PIL import Image
 
 def get_active_icon():
-    return Image.open('mic_on.ico')
+    return Image.open('resources/mic_on.ico')
 
 def get_passive_icon():
-    return Image.open('mic_off.ico')
+    return Image.open('resources/mic_off.ico')
 
 def get_active_menu():
     menu_item = pystray.MenuItem('Stop Recording', clicked)
