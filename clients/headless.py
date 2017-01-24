@@ -55,16 +55,27 @@ except:
 # Arguments passed via command line.
 ARGS = None
 
+# Ready mixer for playing wav files.
 # The sound played when Eva recognizes the keyword for recording.
-SOUND_FILE = os.path.abspath(os.path.dirname(__file__)) + '/sound.wav'
+sound_file = os.path.abspath(os.path.dirname(__file__)) + '/resources/sound.wav'
+mixer.init()
+mixer.music.load(sound_file)
 
 # Pocketsphinx/respeaker configuration.
 os.environ['POCKETSPHINX_DIC'] = os.path.abspath(os.path.dirname(__file__)) + '/dictionary.txt'
 os.environ['POCKETSPHINX_KWS'] = os.path.abspath(os.path.dirname(__file__)) + '/keywords.txt'
 
+class DummyDecoder(object):
+    """
+    Fake decoder in order to use respeaker's listen() method without setting
+    up a pocketsphinx decoder.
+    """
+    def start_utt(self): pass
+
+
 def listen(quit_event):
     """
-    Utilizes respeaker's Microphone object to liseen for keyword and sends audio
+    Utilizes respeaker's Microphone object to listen for keyword and sends audio
     data to Eva over the network once the keyword is heard.
 
     Audio data will be sent for a maximum of 5 seconds and will stop sending
@@ -75,20 +86,23 @@ def listen(quit_event):
     """
     global ARGS
     global mic
-    mic = Microphone(quit_event=quit_event)
-    while not quit_event.is_set():
-        if ARGS.snowboy_model:
+    if ARGS.snowboy_model:
+        mic = Microphone(quit_event=quit_event, decoder=DummyDecoder())
+        while not quit_event.is_set():
             detector = snowboy.snowboydecoder.HotwordDetector(ARGS.snowboy_model, sensitivity=0.5)
             detector.start(detected_callback=handle_command,
                            interrupt_check=quit_event.is_set,
                            sleep_time=0.03)
             detector.terminate()
-        elif mic.wakeup(ARGS.keyword):
-            handle_command()
+    else:
+        mic = Microphone(quit_event=quit_event)
+        while not quit_event.is_set():
+            if mic.wakeup(ARGS.keyword):
+                handle_command()
 
 def handle_command():
     global mic
-    play(SOUND_FILE)
+    mixer.music.play()
     # Give the sound some time to play.
     time.sleep(0.5)
     print('Listening...')
@@ -110,18 +124,6 @@ def udp_stream(data):
     for d in data:
         udp.sendto(d, (ARGS.eva_host, ARGS.audio_port))
     udp.close()
-
-def play(path):
-    """
-    Simple helper function to play an audio file at the specified path.
-    Utilizes pygame.mixer to play audio files of various types.
-
-    :param path: The path of the audio file on disk.
-    :type path: string
-    """
-    mixer.init()
-    mixer.music.load(path)
-    mixer.music.play()
 
 def start_consumer(queue):
     """
