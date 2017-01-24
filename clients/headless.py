@@ -50,16 +50,16 @@ from anypubsub import create_pubsub_from_settings
 try:
     import snowboy.snowboydecoder
 except:
-    print('WARNING: Could not import Snowboy decoder/model, using Pocketsphinx')
+    print('WARNING: Could not import Snowboy decoder/model - falling back to Pocketsphinx')
 
 # Arguments passed via command line.
 ARGS = None
 
 # Ready mixer for playing wav files.
 # The sound played when Eva recognizes the keyword for recording.
-sound_file = os.path.abspath(os.path.dirname(__file__)) + '/resources/sound.wav'
+SOUND_FILE = os.path.abspath(os.path.dirname(__file__)) + '/resources/sound.wav'
 mixer.init()
-mixer.music.load(sound_file)
+mixer.music.load(SOUND_FILE)
 
 # Pocketsphinx/respeaker configuration.
 os.environ['POCKETSPHINX_DIC'] = os.path.abspath(os.path.dirname(__file__)) + '/dictionary.txt'
@@ -102,6 +102,7 @@ def listen(quit_event):
 
 def handle_command():
     global mic
+    mixer.music.load(SOUND_FILE)
     mixer.music.play()
     # Give the sound some time to play.
     time.sleep(0.5)
@@ -182,7 +183,8 @@ def consume_messages(queue):
                 f = open('/tmp/eva_audio', 'wb')
                 f.write(audio_data)
                 f.close()
-                play('/tmp/eva_audio')
+                mixer.music.load('/tmp/eva_audio')
+                mixer.music.play()
         time.sleep(0.1)
 
 def main():
