@@ -12,8 +12,8 @@ from PIL import Image
 NAME = 'Eva'
 PASSIVE_TEXT = 'Listen'
 ACTIVE_TEXT = 'Stop Recording'
-MIC_ON_ICO = os.path.abspath(os.path.dirname(__file__)) + '/mic_on.ico'
-MIC_OFF_ICO = os.path.abspath(os.path.dirname(__file__)) + '/mic_off.ico'
+MIC_ON_ICO = os.path.abspath(os.path.dirname(__file__)) + '/resources/mic_on.ico'
+MIC_OFF_ICO = os.path.abspath(os.path.dirname(__file__)) + '/resources/mic_off.ico'
 
 def get_active_icon():
     return Image.open(MIC_ON_ICO)

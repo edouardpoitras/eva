@@ -7,7 +7,7 @@ services:
         hostname: eva
         ports:
         - "8080:8080"
-        - "8800:3000/udp"
+        - "8800:8800/udp"
         volumes:
         - .:/eva
         depends_on:
