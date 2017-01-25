@@ -13,10 +13,12 @@ Requirements:
         pip3 install git+https://github.com/respeaker/respeaker_python_library.git
     - May also need PyUSB
         pip3 install pyusb
-    - Requires pygame for audio playback
-        apt-get install python3-pygame
-         or
-        pip3 install pygame --user
+    - Requires pysub for converting mp3 and ogg to wav for playback
+        pip3 install pysub
+        # See https://github.com/jiaaro/pydub for system dependencies.
+        apt-get install ffmpeg libavcodec-ffmpeg-extra56
+            or
+        brew install ffmpeg --with-libvorbis --with-ffplay --with-theora
     - Requires anypubsub
         pip3 install anypubsub --user
     - Requires pymongo
@@ -37,14 +39,16 @@ Optional:
 import os
 import sys
 import time
+import wave
 import socket
 import argparse
 from threading import Thread, Event
 from multiprocessing import Process
-from pygame import mixer
 from pymongo import MongoClient
 from respeaker.microphone import Microphone
 from anypubsub import create_pubsub_from_settings
+from pydub import AudioSegment
+from pydub.playback import play as pydub_play
 
 # Check for Snowboy.
 try:
@@ -55,11 +59,8 @@ except:
 # Arguments passed via command line.
 ARGS = None
 
-# Ready mixer for playing wav files.
 # The sound played when Eva recognizes the keyword for recording.
-SOUND_FILE = os.path.abspath(os.path.dirname(__file__)) + '/resources/sound.wav'
-mixer.init()
-mixer.music.load(SOUND_FILE)
+SOUND_FILE = os.path.abspath(os.path.dirname(__file__)) + '/resources/ping.wav'
 
 # Pocketsphinx/respeaker configuration.
 os.environ['POCKETSPHINX_DIC'] = os.path.abspath(os.path.dirname(__file__)) + '/dictionary.txt'
@@ -102,14 +103,23 @@ def listen(quit_event):
 
 def handle_command():
     global mic
-    mixer.music.load(SOUND_FILE)
-    mixer.music.play()
-    # Give the sound some time to play.
-    time.sleep(0.5)
+    play(SOUND_FILE)
     print('Listening...')
     data = mic.listen(duration=5, timeout=1)
     udp_stream(data)
     print('Done')
+
+def play(filepath, content_type='audio/wav'):
+    """
+    Will attempt to play various audio file types (wav, ogg, mp3).
+    """
+    if 'wav' in content_type:
+        sound = AudioSegment.from_wav(filepath)
+    elif 'ogg' in content_type or 'opus' in content_type:
+        sound = AudioSegment.from_ogg(filepath)
+    elif 'mp3' in content_type or 'mpeg' in content_type:
+        sound = AudioSegment.from_mp3(filepath)
+    pydub_play(sound)
 
 def udp_stream(data):
     """
@@ -183,8 +193,7 @@ def consume_messages(queue):
                 f = open('/tmp/eva_audio', 'wb')
                 f.write(audio_data)
                 f.close()
-                mixer.music.load('/tmp/eva_audio')
-                mixer.music.play()
+                play('/tmp/eva_audio', message['output_audio']['content_type'])
         time.sleep(0.1)
 
 def main():
