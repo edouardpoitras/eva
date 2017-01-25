@@ -60,7 +60,8 @@ except:
 ARGS = None
 
 # The sound played when Eva recognizes the keyword for recording.
-SOUND_FILE = os.path.abspath(os.path.dirname(__file__)) + '/resources/ping.wav'
+PING_FILE = os.path.abspath(os.path.dirname(__file__)) + '/resources/ping.wav'
+PONG_FILE = os.path.abspath(os.path.dirname(__file__)) + '/resources/pong.wav'
 
 # Pocketsphinx/respeaker configuration.
 os.environ['POCKETSPHINX_DIC'] = os.path.abspath(os.path.dirname(__file__)) + '/dictionary.txt'
@@ -103,11 +104,12 @@ def listen(quit_event):
 
 def handle_command():
     global mic
-    play(SOUND_FILE)
+    play(PING_FILE)
     print('Listening...')
     data = mic.listen(duration=5, timeout=1)
     udp_stream(data)
     print('Done')
+    play(PONG_FILE)
 
 def play(filepath, content_type='audio/wav'):
     """
