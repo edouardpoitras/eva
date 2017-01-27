@@ -33,7 +33,7 @@ python3 serve.py
 
 The default setting for Eva is to install the [Web UI Plugins](https://github.com/edouardpoitras/eva-web-ui-plugins) and [Web UI Updater](https://github.com/edouardpoitras/eva-web-ui-updater) plugins (and their dependencies) on first startup. This behaviour can be changed by modifying the core Eva [configuration]() file (typically found at `~/eva/eva.conf`).
 
-Alternatively, once Eva is started, you may navigate to the Web UI (http://localhost:8080) and enable/disable plugins as needed.
+Alternatively, once Eva is started, you may navigate to the Web UI (https://localhost:8080) and enable/disable plugins as needed. Note that a self-signed certificate warning from your browser is normal at this point.
 
 While you're in the Web UI, you may as well download and enable the [Web UI Interact](https://github.com/edouardpoitras/eva-web-ui-interact) plugin which will allow you to test out Eva from the Web UI.
 
