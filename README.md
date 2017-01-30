@@ -1,5 +1,7 @@
 # Overview
 
+[![Documentation Status](https://readthedocs.org/projects/eva-core/badge/?version=latest)](http://eva-core.readthedocs.io/en/latest/?badge=latest)
+
 Eva is an open source alternative to Amazon Echo or Google Home.
 The core of Eva is a simple service that provides hooks for plugins during interactions with users. On it's own, Eva does very little. It's potential comes from the [plugins](https://github.com/edouardpoitras/eva-plugin-repository) the user chooses to enable (or create).
 
