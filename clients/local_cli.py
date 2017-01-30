@@ -1,15 +1,30 @@
 #!/usr/bin/python3
 """
-A command line interface Eva client that directly calls Eva's director commands
-in an attempt to send Eva commands without the need for an Eva server.
+Primary used for development and testing purposes.
 
-This is the easiest way to develop plugins in Eva.
+The Local CLI is a text-only stand-alone client that does not require the Eva
+server to be running in the background. Eva will be bootstrapped in the process
+of running the Local CLI.
+
+Ensure you have all the required dependencies installed and a local instance of
+MongoDB running. You can also use the MongoDB instance available through the
+docker-compose configuration provided::
+
+		pip3 install -r requirements.txt --user
+		docker-compose up mongo
+		python3 clients/local_cli.py
 """
 
 import sys
-from cli import CLI
 from eva import director
 from eva.util import get_pubsub
+try:
+    from cli import CLI
+except ImportError:
+    print('ERROR: Could not import base CLI class. Please make sure you ' + \
+          'are running this from the Eva clients directory')
+    # Ignoring error to allow sphinx to import class for documentation.
+    CLI = object
 
 class LocalCLI(CLI):
     """

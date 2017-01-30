@@ -1,51 +1,104 @@
 """
-Use this python client to send audio data and receive responses from Eva.
+A simple voice-enabled client that has no user interface. It currently supports
+keyword-based activation through either pocketsphinx or
+`snowboy <https://snowboy.kitt.ai/>`_ models.
 
-Requirements:
-    - Requires a working pyaudio installation
-        apt-get install portaudio19-dev
-        apt-get install python-pyaudio
-         or
-        pip3 install pyaudio --user
-    - Requires pocketsphinx, webrtcvad, respeaker
-        apt-get install pocketsphinx
-        pip3 install pocketsphinx webrtcvad
-        pip3 install git+https://github.com/respeaker/respeaker_python_library.git
-    - May also need PyUSB
-        pip3 install pyusb
-    - Requires pysub for converting mp3 and ogg to wav for playback
-        pip3 install pysub
-        # See https://github.com/jiaaro/pydub for system dependencies.
-        apt-get install ffmpeg libavcodec-ffmpeg-extra56
-            or
-        brew install ffmpeg --with-libvorbis --with-ffplay --with-theora
-    - Requires anypubsub
-        pip3 install anypubsub --user
-    - Requires pymongo
-        apt-get install python3-pymongo
-         or
-        pip3 install pymongo --user
-    - Requires that Eva have the audio_server plugin enabled
+.. warning::
 
-Optional:
-    You may optionally use Snowboy for keyword detection:
-        - Compile it for you platform (or use the provided one for Python3 Ubuntu 16.04)
-        - Follow steps at https://github.com/kitt-ai/snowboy
-        - Ensure you use swig >= 3.0.10 and Python3 in the Makefile
-        - Put the resulting _snowboydetect.so and snowboydetect.py in the snowboy/ folder
-        - Get a snowboy model from https://snowboy.kitt.ai (or use the provided alexa one)
-        - Use the --snowboy-model flag when starting the client (pointing to the snowboy model)
+		This client is experimental and is currently under active development.
+
+Requirements
+++++++++++++
+
+* Requires a working pyaudio installation (with portaudio)
+
+    ``apt-get install portaudio19-dev``
+
+    ``apt-get install python-pyaudio``
+
+    Or
+
+    ``pip3 install pyaudio --user``
+
+* Requires pocketsphinx, webrtcvad, respeaker
+
+    ``apt-get install pocketsphinx``
+
+    ``pip3 install pocketsphinx webrtcvad``
+
+    ``pip3 install git+https://github.com/respeaker/respeaker_python_library.git``
+
+* May also need PyUSB
+
+    ``pip3 install pyusb``
+
+* Requires pydub for converting mp3 and ogg to wav for playback
+
+    ``pip3 install pydub``
+
+    See https://github.com/jiaaro/pydub for system dependencies.
+
+    ``apt-get install ffmpeg libavcodec-ffmpeg-extra56``
+
+    Or
+
+    ``brew install ffmpeg --with-libvorbis --with-ffplay --with-theora``
+
+* Requires anypubsub
+
+    ``pip3 install anypubsub --user``
+
+* Requires pymongo
+
+    ``apt-get install python3-pymongo``
+
+    Or
+
+    ``pip3 install pymongo --user``
+
+* Requires that Eva have the
+    `Audio Server <https://github.com/edouardpoitras/eva-audio-server>`_ plugin enabled
+
+Optional
+++++++++
+
+You may optionally use `snowboy`_ for keyword
+detection. To do so, you need to get the ``_snowboydetect.so`` binary for your
+platform (the one found at ``clients/snowboy/_snowboydetect.so`` in this repo is
+only for Python3 on Ubuntu).
+
+You can get precompiled binaries and information on how to compile
+`here <https://github.com/kitt-ai/snowboy#precompiled-binaries-with-python-demo>`_.
+
+If you end up compiling, ensure you use swig >= 3.0.10 and use your platform's
+Python3 command in the Makefile (default is just ``python``).
+
+Once you've compiled snowboy (or downloaded the dependencies), put the
+``_snowboydetect.so`` and ``snowboydetect.py`` files in the ``clients/snowboy/``
+folder.
+
+You can either get a keyword detection model on the snowboy
+`website <https://snowboy.kitt.ai/>`_ or use the provided alexa one in this
+repository.
+
+Usage
++++++
+
+``python3 clients/headless.py``
+
+Or with a snowboy model:
+
+``python3 clients/headless.py --snowboy-model=clients/snowboy/alexa.umdl``
 """
+
 import os
-import sys
 import time
-import wave
 import socket
 import argparse
 from threading import Thread, Event
 from multiprocessing import Process
-from pymongo import MongoClient
 from respeaker.microphone import Microphone
+from pymongo import MongoClient
 from anypubsub import create_pubsub_from_settings
 from pydub import AudioSegment
 from pydub.playback import play as pydub_play
@@ -53,7 +106,7 @@ from pydub.playback import play as pydub_play
 # Check for Snowboy.
 try:
     import snowboy.snowboydecoder
-except:
+except: #pylint: disable=W0702
     print('WARNING: Could not import Snowboy decoder/model - falling back to Pocketsphinx')
 
 # Arguments passed via command line.
@@ -67,12 +120,16 @@ PONG_FILE = os.path.abspath(os.path.dirname(__file__)) + '/resources/pong.wav'
 os.environ['POCKETSPHINX_DIC'] = os.path.abspath(os.path.dirname(__file__)) + '/dictionary.txt'
 os.environ['POCKETSPHINX_KWS'] = os.path.abspath(os.path.dirname(__file__)) + '/keywords.txt'
 
-class DummyDecoder(object):
+class DummyDecoder(object): #pylint: disable=R0903
     """
     Fake decoder in order to use respeaker's listen() method without setting
     up a pocketsphinx decoder.
     """
-    def start_utt(self): pass
+    def start_utt(self):
+        """
+        Overloaded method that simply passes.
+        """
+        pass
 
 
 def listen(quit_event):

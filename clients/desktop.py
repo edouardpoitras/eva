@@ -1,8 +1,6 @@
 """
-Desktop app centered around the system tray icon.
-
-Requires pystray:
-    pip3 install pystray --user
+A desktop client with a proper UI and taskbar icon is currently in the works.
+The progress can be followed in the dev/desktop_client branch (help appreciated).
 """
 
 import pystray
@@ -30,9 +28,9 @@ def clicked(icon):
         icon.icon = get_passive_icon()
         icon.menu = get_passive_menu()
 
-icon = pystray.Icon(name='Eva', icon=get_passive_icon(), title='Eva', menu=get_passive_menu())
-
 def setup(icon):
     icon.visible = True
 
-icon.run(setup)
+if __name__ == '__main__':
+    icon = pystray.Icon(name='Eva', icon=get_passive_icon(), title='Eva', menu=get_passive_menu())
+    icon.run(setup)

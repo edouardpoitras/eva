@@ -1,13 +1,33 @@
 #!/usr/bin/python3
 """
-A command line interface Eva client that goes through the Eva MongoDB database
-to send and receive messages. This client should work across the internet
-provided the MongoDB instance is accessible.
+This client is similar to the Local CLI except that it does not bootstrap Eva
+and so requires a running Eva server to connect to. The only dependency is the
+anypubsub Python module.
+
+The default settings assumes that the Eva MongoDB instance can be accessed locally::
+
+	  pip3 install anypubsub --user
+	  python3 clients/remote_cli.py
+
+If this is not the case, the following code can be used to connect to the
+remotely accessible MongoDB instance that Eva is using::
+
+		from clients.remote_cli import RemoteCLI
+		cli = RemoteCLI(host='remote.host', port=27017, username='', password='')
+		cli.start_consumer('eva_messages')
+		cli.start_consumer('eva_responses')
+		cli.interact()
 """
 
 from pymongo import MongoClient
 from anypubsub import create_pubsub_from_settings
-from cli import CLI
+try:
+    from cli import CLI
+except ImportError:
+    print('ERROR: Could not import base CLI class. Please make sure you ' + \
+          'are running this from the Eva clients directory')
+    # Ignoring error to allow sphinx to import class for documentation.
+    CLI = object
 
 class RemoteCLI(CLI):
     """

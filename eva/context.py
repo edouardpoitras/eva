@@ -184,10 +184,10 @@ class EvaContext(object):
         :param text: The text that will now become the input text from the client.
         :type text: string
         """
-        plugin = get_calling_plugin()
-        gossip.trigger('eva.pre_set_input_text', text=text, plugin=plugin, context=self)
+        plugin_id = get_calling_plugin()
+        gossip.trigger('eva.pre_set_input_text', text=text, plugin_id=plugin_id, context=self)
         self.input_text = text
-        gossip.trigger('eva.post_set_input_text', text=text, plugin=plugin, context=self)
+        gossip.trigger('eva.post_set_input_text', text=text, plugin_id=plugin_id, context=self)
 
     def set_input_audio(self, audio, content_type):
         """
@@ -203,18 +203,18 @@ class EvaContext(object):
         :param content_type: The content type of this binary audio data.
         :type content_type: string
         """
-        plugin = get_calling_plugin()
+        plugin_id = get_calling_plugin()
         gossip.trigger('eva.pre_set_input_audio',
                        audio=audio,
                        content_type=content_type,
-                       plugin=plugin,
+                       plugin_id=plugin_id,
                        context=self)
         self.input_audio = audio
         self.input_audio_content_type = content_type
         gossip.trigger('eva.post_set_input_audio',
                        audio=audio,
                        content_type=content_type,
-                       plugin=plugin,
+                       plugin_id=plugin_id,
                        context=self)
 
     def set_output_text(self, text, responding=True):
@@ -242,18 +242,18 @@ class EvaContext(object):
             allow follow-up questions to be routed to the appropriate plugin.
         :type responding: boolean
         """
-        plugin = get_calling_plugin()
+        plugin_id = get_calling_plugin()
         gossip.trigger('eva.pre_set_output_text',
                        text=text,
                        responding=responding,
-                       plugin=plugin,
+                       plugin_id=plugin_id,
                        context=self)
         self.output_text = text
         self.responded = responding
         gossip.trigger('eva.post_set_output_text',
                        text=text,
                        responding=responding,
-                       plugin=plugin,
+                       plugin_id=plugin_id,
                        context=self)
 
     def set_output_audio(self, audio, content_type):
@@ -266,11 +266,11 @@ class EvaContext(object):
         :param content_type: The content type of the binary audio data.
         :type content_type: string
         """
-        plugin = get_calling_plugin()
+        plugin_id = get_calling_plugin()
         gossip.trigger('eva.pre_set_output_audio',
                        audio=audio,
                        content_type=content_type,
-                       plugin=plugin,
+                       plugin_id=plugin_id,
                        context=self)
         self.output_audio = audio
         self.output_audio_content_type = content_type
