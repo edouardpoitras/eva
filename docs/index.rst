@@ -10,6 +10,8 @@ Welcome to Eva's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   clients
+   plugin_development
    api
 
 
