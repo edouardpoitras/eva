@@ -11,6 +11,7 @@ Welcome to Eva's documentation!
    :caption: Contents:
 
    clients
+   configuration
    plugin_development
    api
 
