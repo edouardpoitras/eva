@@ -1,5 +1,5 @@
-Eva Clients (Incomplete)
-========================
+Clients (Incomplete)
+====================
 
 You may also run a native Python client to communicate with Eva. Two options are provided in this repo:
 

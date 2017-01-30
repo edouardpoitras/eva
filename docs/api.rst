@@ -1,50 +1,50 @@
 API Reference
 =============
 
-eva.config
-----------
+Config
+------
 
 .. automodule:: eva.config
     :members:
     :undoc-members:
 
-eva.context
------------
+Context
+-------
 
 .. automodule:: eva.context
     :members:
     :undoc-members:
 
-eva.director
-------------
+Director
+--------
 
 .. automodule:: eva.director
     :members:
     :undoc-members:
 
-eva.logger
-----------
+Logger
+------
 
 .. automodule:: eva.logger
     :members:
     :undoc-members:
 
-eva.plugin
-----------
+Plugin
+------
 
 .. automodule:: eva.plugin
     :members:
     :undoc-members:
 
-eva.scheduler
--------------
+Scheduler
+---------
 
 .. automodule:: eva.scheduler
     :members:
     :undoc-members:
 
-eva.util
---------
+Util
+----
 
 .. automodule:: eva.util
     :members:
