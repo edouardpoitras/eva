@@ -123,22 +123,79 @@ You can register functions in your plugin with any of the following triggers:
     :type data: dict
 
 ``eva.pre_interaction_context``
-data=data
+
+    A trigger that gets fired when a new interaction is about to begin.
+    No :class:`eva.context.EvaContext` object is available at this point.
+
+    :param data: The data received from the clients on query/command.
+          See :func:`eva.context.EvaContext.__init__` for more details.
+    :type data: dict
 
 ``eva.pre_interaction``
-context=context
+
+    Same as the ``eva.pre_interaction_context`` trigger except that the context
+    object has been created and is passed to the registered function.
+
+    :param context: The context object created for this interaction.
+    :type context: :class:`eva.context.EvaContext`
 
 ``eva.interaction``
-context=context
+
+    This trigger is where most plugin check if they should be handling the input
+    from the user.
+
+    Usually plugins will check if another plugin has not already acted on the
+    user's query/command before acting::
+
+        @gossip.register('eva.interaction')
+        def interaction(context)
+            if not context.response_ready():
+                context.set_output_text('Too late other plugins, I'm responding!')
+
+    You would typically want to use the context object's
+    :func:`eva.context.EvaContext.contains` method to see if certain text was
+    part of the query/command from the user::
+
+        @gossip.register('eva.interaction')
+        def interaction(context)
+            if not context.response_ready() and context.contains('weather'):
+                weather = get_current_weather()
+                context.set_output_text('Here is the current weather: %s' %weather)
+
+    :param context: The context object created for this interaction.
+    :type context: :class:`eva.context.EvaContext`
+
+    .. todo::
+
+        Need to mention other plugins that offer more powerful tools like
+        follow-up questions and intent parsing.
 
 ``eva.post_interaction``
-context=context
+
+    Triggered immediately after ``eva.interaction``.
+
+    :param context: The context object created for this interaction.
+    :type context: :class:`eva.context.EvaContext`
 
 ``eva.text_to_speech``
-context=context
+
+    This trigger is called when the interaction is complete and no output_audio
+    is present in the context object. This is primarily used by plugins to convert
+    text to audio data for the clients to play as a response from Eva.
+
+    You would usually use the :func:`eva.context.EvaContext.set_output_audio`
+    if you wanted to add output_audio to the interaction.
+
+    :param context: The context object created for this interaction.
+    :type context: :class:`eva.context.EvaContext`
 
 ``eva.pre_return_data``
-return_data=return_data
+
+    This is triggered right before returning the response data to the clients.
+
+    :param return_data: Same as what is returned from the
+        :func:`eva.director.interact` function.
+    :type return_data: dict
 
 ``eva.scheduler.job_failed``
 event=event

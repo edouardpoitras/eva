@@ -99,7 +99,7 @@ html_theme_options = {
     #'logo': 'eva.png',
     'github_user': 'edouardpoitras',
     'github_repo': 'eva',
-    #'github_banner': True,
+    'github_banner': True,
     #'travis_button': True,
 }
 html_sidebars = {
