@@ -18,13 +18,7 @@ docker-compose configuration provided::
 import sys
 from eva import director
 from eva.util import get_pubsub
-try:
-    from cli import CLI
-except ImportError:
-    print('ERROR: Could not import base CLI class. Please make sure you ' + \
-          'are running this from the Eva clients directory')
-    # Ignoring error to allow sphinx to import class for documentation.
-    CLI = object
+from cli import CLI
 
 class LocalCLI(CLI):
     """

@@ -11,22 +11,140 @@ take care of voice recognition.
 Local CLI
 ---------
 
-.. automodule:: clients.local_cli
+Primary used for development and testing purposes.
+
+The Local CLI is a text-only stand-alone client that does not require the Eva
+server to be running in the background. Eva will be bootstrapped in the process
+of running the Local CLI.
+
+Ensure you have all the required dependencies installed and a local instance of
+MongoDB running. You can also use the MongoDB instance available through the
+docker-compose configuration provided::
+
+		pip3 install -r requirements.txt --user
+		docker-compose up mongo
+		python3 clients/local_cli.py
 
 Remote CLI
 ----------
 
-.. automodule:: clients.remote_cli
+This client is similar to the Local CLI except that it does not bootstrap Eva
+and so requires a running Eva server to connect to. The only dependency is the
+anypubsub Python module.
+
+The default settings assumes that the Eva MongoDB instance can be accessed locally::
+
+	  pip3 install anypubsub --user
+	  python3 clients/remote_cli.py
+
+If this is not the case, the following code can be used to connect to the
+remotely accessible MongoDB instance that Eva is using::
+
+		from clients.remote_cli import RemoteCLI
+		cli = RemoteCLI(host='remote.host', port=27017, username='', password='')
+		cli.start_consumer('eva_messages')
+		cli.start_consumer('eva_responses')
+		cli.interact()
 
 Headless (Experimental)
 -----------------------
 
-.. automodule:: clients.headless
+A simple voice-enabled client that has no user interface. It currently supports
+keyword-based activation through either pocketsphinx or
+`snowboy <https://snowboy.kitt.ai/>`_ models.
+
+.. warning::
+
+		This client is experimental and is currently under active development.
+
+Requirements
+++++++++++++
+
+* Requires a working pyaudio installation (with portaudio)
+
+    ``apt-get install portaudio19-dev``
+
+    ``apt-get install python-pyaudio``
+
+    Or
+
+    ``pip3 install pyaudio --user``
+
+* Requires pocketsphinx, webrtcvad, respeaker
+
+    ``apt-get install pocketsphinx``
+
+    ``pip3 install pocketsphinx webrtcvad``
+
+    ``pip3 install git+https://github.com/respeaker/respeaker_python_library.git``
+
+* May also need PyUSB
+
+    ``pip3 install pyusb``
+
+* Requires pydub for converting mp3 and ogg to wav for playback
+
+    ``pip3 install pydub``
+
+    See https://github.com/jiaaro/pydub for system dependencies.
+
+    ``apt-get install ffmpeg libavcodec-ffmpeg-extra56``
+
+    Or
+
+    ``brew install ffmpeg --with-libvorbis --with-ffplay --with-theora``
+
+* Requires anypubsub
+
+    ``pip3 install anypubsub --user``
+
+* Requires pymongo
+
+    ``apt-get install python3-pymongo``
+
+    Or
+
+    ``pip3 install pymongo --user``
+
+* Requires that Eva have the
+    `Audio Server <https://github.com/edouardpoitras/eva-audio-server>`_ plugin enabled
+
+Optional
+++++++++
+
+You may optionally use `snowboy`_ for keyword
+detection. To do so, you need to get the ``_snowboydetect.so`` binary for your
+platform (the one found at ``clients/snowboy/_snowboydetect.so`` in this repo is
+only for Python3 on Ubuntu).
+
+You can get precompiled binaries and information on how to compile
+`here <https://github.com/kitt-ai/snowboy#precompiled-binaries-with-python-demo>`_.
+
+If you end up compiling, ensure you use swig >= 3.0.10 and use your platform's
+Python3 command in the Makefile (default is just ``python``).
+
+Once you've compiled snowboy (or downloaded the dependencies), put the
+``_snowboydetect.so`` and ``snowboydetect.py`` files in the ``clients/snowboy/``
+folder.
+
+You can either get a keyword detection model on the snowboy
+`website <https://snowboy.kitt.ai/>`_ or use the provided alexa one in this
+repository.
+
+Usage
++++++
+
+``python3 clients/headless.py``
+
+Or with a snowboy model:
+
+``python3 clients/headless.py --snowboy-model=clients/snowboy/alexa.umdl``
 
 Desktop (Incomplete)
 --------------------
 
-.. automodule:: clients.desktop
+A desktop client with a proper UI and taskbar icon is currently in the works.
+The progress can be followed in the dev/desktop_client branch (help appreciated).
 
 Developers
 ----------
