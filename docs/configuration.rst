@@ -1,3 +1,5 @@
+.. _configuration:
+
 Configuration
 =============
 
@@ -7,6 +9,8 @@ If you have
 `Web UI Plugins <https://github.com/edouardpoitras/eva-web-ui-plugins>`_
 enabled, you can configure each individual plugin from the Web UI instead of
 managing config files on disk.
+
+.. _eva-core-configuration:
 
 Eva Core
 --------
@@ -88,6 +92,8 @@ An example configuration file could look like this::
     username = myusername
     password = mypassword
     database = my_eva
+
+.. _eva-plugins-configuration:
 
 Eva Plugins
 -----------
