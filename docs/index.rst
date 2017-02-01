@@ -3,23 +3,20 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Eva's documentation!
-===============================
+Eva Documentation
+=================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    clients
    configuration
    plugin_development
+   triggers
    api
 
-
-
-Indices and tables
-==================
+Index and Search
+================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`

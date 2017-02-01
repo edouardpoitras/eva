@@ -106,8 +106,7 @@ Requirements
 
     ``pip3 install pymongo --user``
 
-* Requires that Eva have the
-    `Audio Server <https://github.com/edouardpoitras/eva-audio-server>`_ plugin enabled
+* Requires that Eva have the `Audio Server <https://github.com/edouardpoitras/eva-audio-server>`_ plugin enabled
 
 Optional
 ++++++++

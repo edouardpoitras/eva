@@ -12,10 +12,10 @@ A typical Eva plugin will consist of a folder with the following structure:
 Folder Structure
 ----------------
 
-The plugin folder must be located in the :ref:`eva-core-configuration`
+The plugin folder must be located in the :ref:`configured <core-configuration>`
 ``plugin_directory`` for Eva to pick it up as an available plugin (unless it's
-already in the public
-`plugin repository <https://github.com/edouardpoitras/eva-plugin-repository>`_).
+already in the
+`public plugin repository <https://github.com/edouardpoitras/eva-plugin-repository>`_).
 
 .. warning::
 
@@ -36,218 +36,24 @@ See the :ref:`api` documentation for more details.
 Triggers
 ++++++++
 
-Triggers are the way that Eva and plugins can interact with each other and share
-control of the program flow. Eva uses the
-`gossip <https://gossip.readthedocs.io/en/latest/>`_ python module for this
-purpose.
-
-To register a function in your plugin to a specific trigger, you simply need to
-decorate the function like so::
+Plugins must register with some triggers in order to be notified of
+interactions with the user. Here is a simple example of a weather plugin that
+registers to the ``eva.interaction`` trigger in order to handle weather queries
+from clients::
 
     import gossip
 
-    @gossip.register('trigger_name_here')
-    def custom_function():
-        # Perform actions here when the 'trigger_name_here' trigger is fired.
-        pass
-
-If the trigger provides variables, your function needs to have those parameters
-as well::
-
-    import gossip
-    from eva import log
-
-    @gossip.register('test_trigger')
-    def custom_function(value):
-        log.info('You fired the trigger with the value: %s' %value)
-
-    value = 'Hello World!'
-    gossip.trigger('test_trigger', value=value)
-
-It is a good idea to create triggers throughout your plugin to allow other
-plugins to modify data, or simply be notified of certain events. Ensure you
-document your triggers so other plugin developers can take advantage of them.
-
-There are many ways of managing trigger priorities and dependencies. See the
-`gossip`_ documentation for more details.
-
-It is not possible to ``return`` data back to the caller from a registered
-trigger. The triggering plugin must provide a referenced object (list, dict,
-object) as a parameter to the trigger in order to receive feedback from the
-other plugins::
-
-    import gossip
-
-    @gossip.register('test_trigger')
-    def test(data):
-        data.append('One')
-        data.append('Two')
-
-    data = ['Testing']
-    gossip.trigger('test_trigger', data=data)
-    print(', '.join(data))
-    # Testing, One, Two
-
-.. note::
-
-    There are many triggers that are exposed by plugins. If your plugin overlaps
-    in functionality with another, or if you want to integrate your plugin with
-    another, it is certainly worth looking at the other plugin documentation to
-    see if a trigger already exists to fullfill the requirement. If not, I'm
-    sure a pull request would be welcome :)
-
-You can register functions in your plugin with any of the following triggers:
-
-``eva.pre_boot``
-
-    A trigger that gets fired before Eva starts loading plugins.
-    This is not accessible by Eva plugins.
-
-``eva.plugins_loaded``
-
-    A trigger that gets fired immediately after all Eva plugins have been loaded.
-
-``eva.post_boot``
-
-    This trigger is fired once Eva has booted, but before Eva has begun to
-    listen for commands.
-
-``eva.voice_recognition``
-
-    A trigger that gets fired when a new interaction has begun, but only
-    ``input_audio`` was provided (no ``input_text``). This is primarily used
-    by plugins that transcribe audio.
-
-    :param data: The data received from the clients on query/command.
-          See :func:`eva.context.EvaContext.__init__` for more details.
-    :type data: dict
-
-``eva.pre_interaction_context``
-
-    A trigger that gets fired when a new interaction is about to begin.
-    No :class:`eva.context.EvaContext` object is available at this point.
-
-    :param data: The data received from the clients on query/command.
-          See :func:`eva.context.EvaContext.__init__` for more details.
-    :type data: dict
-
-``eva.pre_interaction``
-
-    Same as the ``eva.pre_interaction_context`` trigger except that the context
-    object has been created and is passed to the registered function.
-
-    :param context: The context object created for this interaction.
-    :type context: :class:`eva.context.EvaContext`
-
-``eva.interaction``
-
-    This trigger is where most plugin check if they should be handling the input
-    from the user.
-
-    Usually plugins will check if another plugin has not already acted on the
-    user's query/command before acting::
-
-        @gossip.register('eva.interaction')
-        def interaction(context)
-            if not context.response_ready():
-                context.set_output_text('Too late other plugins, I'm responding!')
-
-    You would typically want to use the context object's
-    :func:`eva.context.EvaContext.contains` method to see if certain text was
-    part of the query/command from the user::
-
-        @gossip.register('eva.interaction')
-        def interaction(context)
-            if not context.response_ready() and context.contains('weather'):
-                weather = get_current_weather()
-                context.set_output_text('Here is the current weather: %s' %weather)
-
-    :param context: The context object created for this interaction.
-    :type context: :class:`eva.context.EvaContext`
-
-    .. todo::
-
-        Need to mention other plugins that offer more powerful tools like
-        follow-up questions and intent parsing.
-
-``eva.post_interaction``
-
-    Triggered immediately after ``eva.interaction``.
-
-    :param context: The context object created for this interaction.
-    :type context: :class:`eva.context.EvaContext`
-
-``eva.text_to_speech``
-
-    This trigger is called when the interaction is complete and no output_audio
-    is present in the context object. This is primarily used by plugins to convert
-    text to audio data for the clients to play as a response from Eva.
-
-    You would usually use the :func:`eva.context.EvaContext.set_output_audio`
-    if you wanted to add output_audio to the interaction.
-
-    :param context: The context object created for this interaction.
-    :type context: :class:`eva.context.EvaContext`
-
-``eva.pre_return_data``
-
-    This is triggered right before returning the response data to the clients.
-
-    :param return_data: Same as what is returned from the
-        :func:`eva.director.interact` function.
-    :type return_data: dict
-
-``eva.scheduler.job_failed``
-event=event
-
-``eva.scheduler.job_succeeded``
-event=event
-
-``eva.logger.debug``
-message=message
-
-``eva.logger.info``
-message=message
-
-``eva.logger.warning``
-message=message
-
-``eva.logger.error``
-message=message
-
-``eva.logger.fatal``
-message=message
-
-``eva.pre_publish``
-message=message
-
-``eva.publish``
-message=message
-
-``eva.post_publish``
-message=message
-
-``eva.pre_set_input_text``
-text=text
-plugin_id=plugin_id
-context=self
-
-``eva.post_set_input_text``
-text=text
-plugin_id=plugin_id
-context=self
-
-``eva.pre_set_input_audio``
-
-``eva.post_set_input_audio``
-
-``eva.pre_set_output_text``
-
-``eva.post_set_output_text``
-
-``eva.pre_set_output_audio``
-
-``eva.post_set_output_audio``
+    @gossip.register('eva.interaction')
+    def interaction(context)
+        # Ensure no other plugin has responded to this query yet.
+        # Ensure the query contains the word 'weather'.
+        if not context.response_ready() and context.contains('weather'):
+            weather = get_current_weather()
+            # Respond with the weather information.
+            context.set_output_text('Here is the current weather: %s' %weather)
+
+For more details and a list of available triggers, see the :ref:`triggers`
+section of this documentation.
 
 Configuration
 +++++++++++++
@@ -380,13 +186,13 @@ of configuring different aspects of your plugin.
 
 If a specification file is available, Eva will use it to validate a
 configuration file that the user may have provided in the ``config_directory``
-(see :ref:`eva-core-configuration` configuration for more details).
+(see :ref:`core-configuration` configuration for more details).
 
 The `Weather <https://github.com/edouardpoitras/eva-weather>`_ plugin is a good
 example. It requires that the user provide an API key in order to access
 weather information.
 
-See :ref:`eva-plugins-configuration` configuration for more details and an
+See :ref:`plugins-configuration` configuration for more details and an
 example.
 
 requirements.txt File
@@ -400,3 +206,92 @@ plugin is enabled.
 
 Full Example
 ------------
+
+We're going to build a simple plugin named ``motivate`` that has the goal of
+motivating the user.
+
+Our plugin should be able to send encouraging responses to the user when asked,
+and send follow-up motivational comments if the user claims it didn't work the
+first time.
+
+It will also send random encouraging statements to the user every day.
+
+Let's start with our info file (``motivate/motivate.info``)::
+
+    name = Motivate
+    description = Motivate the user with this amazing plugin!
+    version = 0.1.0
+    dependencies = conversations
+
+We're adding the `conversations <https://github.com/edouardpoitras/eva-conversations>`_
+plugin as a dependency because we want to be able to handle follow-up
+query/commands, which is something the conversations plugin offers through it's
+``eva.conversations.follow_up`` trigger.
+
+Let's allow the plugin to capture the user's name so as to make the motivations
+more personal.
+
+Here our configuration specification file (``motivate/motivate.conf.spec``)::
+
+    user_name = string(default='User')
+
+We won't be using any python modules other than the ones required by Eva, so no
+requirements.txt file is needed.
+
+Now for our actual plugin code (``motivate/motivate.py``)::
+
+    import random
+    import gossip
+    from eva import conf
+    from eva import publish
+    from eva import scheduler
+
+    # User name pulled from the configuration.
+    USER = conf['plugins']['motivate']['config']['user_name']
+
+    # We could also pull motivational phrases from the internet.
+    # We could also make the motivational phrases configurable in the spec file.
+    PHRASES = ['Never give up %s!' %USER,
+               'You can do it %s!' %USER,
+               '%s, you don\'t have to have it all figured out to move forward.' %USER,
+               '%s, keep your eyes on the stars, and your feet on the ground.' %USER]
+
+    def get_phrase(ask_follow_up=True):
+        # Choose a random motivational phrase.
+        phrase = random.choice(PHRASES)
+        if ask_follow_up:
+            # Don't forget to ask if they are sufficiently motivated.
+            return '%s Are you sufficiently motivated?' %phrase
+        return phrase
+
+    @gossip.register('eva.interaction')
+    def interaction(context):
+        # Ensure no other plugin has already responded and the user's query or
+        # command contains the word 'motivate' (as in 'motivate me please').
+        if not context.response_ready() and context.contains('motivate'):
+            # Get are motivational phrase.
+            response = get_phrase()
+            # Apply the response so that Eva knows to send it to the client.
+            context.set_output_text(response)
+
+    @gossip.register('eva.conversations.follow_up')
+    def follow_up(plugin_id, context):
+        # Check if we should be handling the follow-up query/command.
+        if plugin_id == 'motivate':
+            # If the user's query/command contains the word 'no', we try again.
+            if context.contains('no'):
+                # Get another motivational phrase.
+                response = get_phrase()
+                context.set_output_text(response)
+            else:
+                # Tell other plugins that this interaction has been taken care of.
+                context.responded = True
+                # Explicitly close the conversation (don't wait for timeout).
+                context.conversation.close()
+
+    @scheduler.scheduled_job('interval', hours=24, id='eva_motivate_job')
+    def motivate_job():
+        # We don't want to ask the user for a follow-up here.
+        phrase = get_phrase(False)
+        # Publish the motivational message to clients.
+        publish(phrase)
