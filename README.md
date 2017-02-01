@@ -54,24 +54,3 @@ Please see the [plugin development guide](https://eva-core.readthedocs.io/en/lat
 # Disclaimer
 
 Eva is still a VERY young project. Please help us make it better by submitting feature requests and [issues](https://github.com/edouardpoitras/eva/issues) when discovered.
-
-# Feature List
-
-- Supports multiple concurrent clients for sending commands and receiving responses
-- Very flexible plugin system using the [gossip](http://gossip.readthedocs.org) hooking and signaling library
-- Plugin dependency management allows for easily installing new plugins without worrying about dependencies
-- Central plugin [repository](https://github.com/edouardpoitras/eva-plugin-repository) (configurable)
-- Plugin-level configuration options to customize your Eva installation
-- Can be easily setup using docker-compose
-
-# Todo
-
-There is still a lot of work to be done:
-
- - More/better documentation
- - Proper cross-platform desktop client with a GUI (separate repo?)
- - Raspberry Pi client image (separate repo?)
- - Voice recognition Docker container similar to the Text-to-Speech one (separate repo?)
- - Proper intent parser for interactions (separate plugin?)
- - Proper voice activity detector (VAD) - should maybe be done in the audio_server plugin
- - Test coverage and travis CI integration
