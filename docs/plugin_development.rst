@@ -295,3 +295,22 @@ Now for our actual plugin code (``motivate/motivate.py``)::
         phrase = get_phrase(False)
         # Publish the motivational message to clients.
         publish(phrase)
+
+There we have it. Sending commands to Eva from the
+`Web UI Interact <https://github.com/edouardpoitras/eva-web-ui-interact>`_ page
+or one of the provided :ref:`clients`, you get something like the following::
+
+    You > Hello Eva, can you motivate me please?
+    Eva > You can do it User! Are you sufficiently motivated?
+    You > Um... no.
+    Eva > User, keep your eyes on the stars, and your feet on the ground. Are you sufficiently motivated?
+    You > Yeah actually that worked. Thanks.
+
+You could now setup your own name by creating a ``motivate.conf`` file in Eva's
+:ref:`configuration directory <core-configuration>` with the following content::
+
+    user_name = Eddie
+
+Next steps would be to add your plugin to a GitHub repository and submit it to
+the `public plugin repository <https://github.com/edouardpoitras/eva-plugin-repository>`_
+so everyone can be motivated!
