@@ -1,0 +1,19 @@
+version: '2'
+services:
+    eva:
+        build:
+            context: .
+            dockerfile: Dockerfile.arm
+        hostname: eva
+        ports:
+        - "8080:8080"
+        - "8800:8800/udp"
+        volumes:
+        - .:/eva
+        depends_on:
+        - "mongo"
+    mongo:
+        image: nonoroazoro/rpi-mongo
+        hostname: mongo
+        ports:
+        - "27017:27017"

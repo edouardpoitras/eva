@@ -25,6 +25,12 @@ To run Eva with docker-compose, you simply have to run the following command:
 docker-compose up
 ```
 
+Or, if running on an ARM-based device like the Raspberry Pi:
+
+```
+docker-compose -f docker-compose-arm.yml up
+```
+
 This may take a while on the first run as the Eva container is built and all the dependencies are installed.
 
 To run Eva outside of Docker, you simply have to execute the `eva.directory.serve()` function. This is exactly what the `serve.py` does for you:
