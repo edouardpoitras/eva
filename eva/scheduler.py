@@ -43,6 +43,11 @@ def get_scheduler():
             # This will fire off the job immediately.
             scheduler.add_job(func_name, id="eva_<plugin_id>_job")
 
+    .. todo::
+
+        Need to add listeners for all event types:
+        https://apscheduler.readthedocs.io/en/latest/modules/events.html#event-codes
+
     :note: This function most likely needs to be revisited as it may not be
         thread-safe. Eva and plugins can modify the config singleon
         simultaneously inside and outside of jobs.

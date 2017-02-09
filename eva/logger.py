@@ -63,10 +63,10 @@ class Logger(object):
         self.logger.error(message)
         gossip.trigger('eva.logger.error', message=message)
 
-    def fatal(self, message):
+    def critical(self, message):
         """
-        Simple wrapper around the standard Python logger's fatal method.
-        Fires the `eva.logger.fatal` trigger.
+        Simple wrapper around the standard Python logger's critical method.
+        Fires the `eva.logger.critical` trigger.
         """
-        self.logger.fatal(message)
-        gossip.trigger('eva.logger.fatal', message=message)
+        self.logger.critical(message)
+        gossip.trigger('eva.logger.critical', message=message)

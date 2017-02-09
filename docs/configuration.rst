@@ -10,10 +10,10 @@ If you have
 enabled, you can configure each individual plugin from the Web UI instead of
 managing config files on disk.
 
-.. _eva-core-configuration:
+.. _core-configuration:
 
-Eva Core
---------
+Core
+----
 
 The core of Eva can be configured through the ``eva.conf`` file.
 
@@ -93,10 +93,10 @@ An example configuration file could look like this::
     password = mypassword
     database = my_eva
 
-.. _eva-plugins-configuration:
+.. _plugins-configuration:
 
-Eva Plugins
------------
+Plugins
+-------
 
 All Eva plugins have the option of supplying a specification file to allow users
 to configure different behaviour for their installation.
